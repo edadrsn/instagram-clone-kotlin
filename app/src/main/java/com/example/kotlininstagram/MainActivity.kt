@@ -30,11 +30,35 @@ class MainActivity : AppCompatActivity() {
         //2-auth= Firebase.auth
 
         auth = Firebase.auth
-
+        //Authentication kullanarak güncel kullanıcı var mı yok mu alabiliriz
+        //Eğer uygulamaay giriş yaptıysak tekrar bize giriş sayfası gelmez ana sayfa gelir
+        val currentUser=auth.currentUser
+        if(currentUser!=null){ //Güncel kullanıco varsa
+            val intent=Intent(this@MainActivity,FeedActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
 
     }
 
     fun signInClicked(view: View) {
+        val email = binding.emailText.text.toString()
+        val password = binding.passwordText.text.toString()
+        if (email.equals("") || password.equals("")) {
+            Toast.makeText(this@MainActivity, "Enter email and password", Toast.LENGTH_SHORT).show()
+        } else {
+            auth.signInWithEmailAndPassword(email, password)
+                .addOnSuccessListener {
+                    val intent = Intent(this@MainActivity, FeedActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this@MainActivity, it.localizedMessage, Toast.LENGTH_SHORT)
+                        .show()
+                }
+
+        }
 
     }
 
