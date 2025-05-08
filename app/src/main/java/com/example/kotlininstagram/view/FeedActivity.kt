@@ -17,6 +17,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 
 class FeedActivity : AppCompatActivity() {
@@ -71,14 +72,14 @@ class FeedActivity : AppCompatActivity() {
         getData()
 
         binding.recyclerView.layoutManager=LinearLayoutManager(this@FeedActivity)
-        feedAdapter=FeedRecyclerAdapter(postArrayList)
+        feedAdapter= FeedRecyclerAdapter(postArrayList)
         binding.recyclerView.adapter=feedAdapter
 
     }
 
     //Verileri almak için getData fonksiyonu oluşturdum
     private fun getData() {
-        db.collection("Posts")
+        db.collection("Posts").orderBy("date", Query.Direction.DESCENDING)
             .addSnapshotListener { value, error ->
                 if (error != null) {
                     Toast.makeText(this, error.localizedMessage, Toast.LENGTH_SHORT).show()
@@ -86,6 +87,9 @@ class FeedActivity : AppCompatActivity() {
                     if (value != null) {
                         if (!value.isEmpty) {
                             val documents = value.documents
+
+                            postArrayList.clear()
+
                             for (document in documents) {
                                 val comment = document.get("comment") as String
                                 val useremail = document.get("userEmail") as String
