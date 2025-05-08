@@ -18,7 +18,32 @@ import com.google.firebase.auth.auth
 class FeedActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityFeedBinding
-    private lateinit var auth:FirebaseAuth
+    private lateinit var auth: FirebaseAuth
+
+
+    //MENÜYÜ MAİNE BAĞLADIK
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val menuInflater = menuInflater
+        menuInflater.inflate(R.menu.insta_menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    //MENÜYE TIKLAYINCA NE YAPICAZ
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.add_post) {
+            //Upload activitye git
+            val intent = Intent(this, UploadActivity::class.java)
+            startActivity(intent)
+
+        } else if (item.itemId == R.id.signOut) {
+            //ÇIKIŞ YAP VE GİRİŞ SAYFASINA GİT
+            auth.signOut()
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
+        return super.onOptionsItemSelected(item)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,34 +54,8 @@ class FeedActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.my_toolbar)
         setSupportActionBar(toolbar)
 
-        auth= Firebase.auth
+        auth = Firebase.auth
 
-    }
-
-
-    //MENÜYÜ MAİNE BAĞLADIK
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-       val menuInflater=menuInflater
-        menuInflater.inflate(R.menu.insta_menu,menu)
-        return super.onCreateOptionsMenu(menu)
-    }
-
-    //MENÜYE TIKLAYINCA NE YAPICAZ
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if(item.itemId==R.id.add_post){
-            val  intent=Intent(this,UploadActivity::class.java)
-            startActivity(intent)
-        }else if(item.itemId==R.id.signOut){
-            //ÇIKIŞ YAP VE GİRİŞ SAYFASINA GİT
-            auth.signOut()
-            val intent=Intent(this,MainActivity::class.java)
-            startActivity(intent)
-            finish()
-
-        }else{
-
-        }
-        return super.onOptionsItemSelected(item)
     }
 
 

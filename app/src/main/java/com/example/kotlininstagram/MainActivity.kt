@@ -32,9 +32,9 @@ class MainActivity : AppCompatActivity() {
         auth = Firebase.auth
         //Authentication kullanarak güncel kullanıcı var mı yok mu alabiliriz
         //Eğer uygulamaay giriş yaptıysak tekrar bize giriş sayfası gelmez ana sayfa gelir
-        val currentUser=auth.currentUser
-        if(currentUser!=null){ //Güncel kullanıco varsa
-            val intent=Intent(this@MainActivity,FeedActivity::class.java)
+        val currentUser = auth.currentUser
+        if (currentUser != null) { //Güncel kullanıcı varsa
+            val intent = Intent(this@MainActivity, FeedActivity::class.java)
             startActivity(intent)
             finish()
         }
@@ -42,49 +42,57 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun signInClicked(view: View) {
-        val email = binding.emailText.text.toString()
-        val password = binding.passwordText.text.toString()
-        if (email.equals("") || password.equals("")) {
-            Toast.makeText(this@MainActivity, "Enter email and password", Toast.LENGTH_SHORT).show()
-        } else {
-            auth.signInWithEmailAndPassword(email, password)
-                .addOnSuccessListener {
-                    val intent = Intent(this@MainActivity, FeedActivity::class.java)
-                    startActivity(intent)
-                    finish()
-                }
-                .addOnFailureListener {
-                    Toast.makeText(this@MainActivity, it.localizedMessage, Toast.LENGTH_SHORT)
-                        .show()
-                }
+         val email = binding.emailText.text.toString()
+         val password = binding.passwordText.text.toString()
+         if (email.equals("") || password.equals("")) {
+             Toast.makeText(this@MainActivity, "Enter email and password", Toast.LENGTH_SHORT).show()
+         } else {
+             if(password.length<6){
+                 Toast.makeText(this@MainActivity,"Password must be at least 6 characters",Toast.LENGTH_SHORT).show()
+             }
+             else {
+                 auth.signInWithEmailAndPassword(email, password)
+                     .addOnSuccessListener {
+                         val intent = Intent(this@MainActivity, FeedActivity::class.java)
+                         startActivity(intent)
+                         finish()
+                     }
+                     .addOnFailureListener {
+                         Toast.makeText(this@MainActivity, it.localizedMessage, Toast.LENGTH_SHORT)
+                             .show()
+                     }
+             }
 
-        }
+         }
 
-    }
+     }
 
-    fun signUpClicked(view: View) {
-        //KAYDOL
-        //SIGN UP NEW USER:Yeni kullanıcı oluşturma
-        val email = binding.emailText.text.toString()
-        val password = binding.passwordText.text.toString()
-        if (email.equals("") || password.equals("")) {
-            Toast.makeText(this@MainActivity, "Enter email and password", Toast.LENGTH_SHORT).show()
-        } else {
-            auth.createUserWithEmailAndPassword(email, password)
-                .addOnSuccessListener {   //Sadece başarılıysa çağırılır
-                    val intent = Intent(this@MainActivity, FeedActivity::class.java)
-                    startActivity(intent)
-                    finish()
-                }
-                .addOnFailureListener {    //Sadece hata varsa çağırılır
-                    Toast.makeText(
-                        this@MainActivity,
-                        it.localizedMessage,  //Hata mesajını kullanıcının anlayacağı dilde yazdır
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-        }
-    }
+     fun signUpClicked(view: View) {
+         //KAYDOL
+         //SIGN UP NEW USER:Yeni kullanıcı oluşturma
+         val email = binding.emailText.text.toString()
+         val password = binding.passwordText.text.toString()
+         if (email.equals("") || password.equals("")) {
+             Toast.makeText(this@MainActivity, "Enter email and password", Toast.LENGTH_SHORT).show()
+         } else {
+             auth.createUserWithEmailAndPassword(email, password)
+                 .addOnSuccessListener {   //Sadece başarılıysa çağırılır
+                     val intent = Intent(this@MainActivity, FeedActivity::class.java)
+                     startActivity(intent)
+                     finish()
+                 }
+                 .addOnFailureListener {    //Sadece hata varsa çağırılır
+                     Toast.makeText(
+                         this@MainActivity,
+                         it.localizedMessage,  //Hata mesajını kullanıcının anlayacağı dilde yazdır
+                         Toast.LENGTH_SHORT
+                     ).show()
+                 }
+         }
+     }
+
+
+
 
 
 }
