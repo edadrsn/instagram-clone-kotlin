@@ -83,7 +83,7 @@ class UploadActivity : AppCompatActivity() {
                             val postMap = hashMapOf<String, Any>()  // Firestore için map oluşturdum
                             postMap.put("downloadUrl", downloadUrl)                 // Resim linki
                             postMap.put(
-                                "useremail",
+                                "userEmail",
                                 auth.currentUser!!.email!!
                             )                                                  // Kullanıcının maili
                             postMap.put(
