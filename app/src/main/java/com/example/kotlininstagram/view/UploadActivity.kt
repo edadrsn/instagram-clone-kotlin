@@ -62,6 +62,7 @@ class UploadActivity : AppCompatActivity() {
         val imageName = "$uuid.jpg" // ID ile bir resim ismi belirledim
 
         // Storage referansına erişiyorum
+        val storage=Firebase.storage
         val reference = storage.reference
         val imageReference =
             reference.child("images").child(imageName) // "images" klasörünün içine ekleyeceğim
@@ -71,8 +72,8 @@ class UploadActivity : AppCompatActivity() {
             imageReference.putFile(selectedPicture!!) // Seçilen resmi storage'a yüklüyorum
                 .addOnSuccessListener {
                     // Resim başarıyla yüklendiyse, download linkini al
-                    val uploadPictureReferences = storage.reference.child("images").child(imageName)
-                    uploadPictureReferences.downloadUrl.addOnSuccessListener {
+                    val uploadPictureReference = storage.reference.child("images").child(imageName)
+                    uploadPictureReference.downloadUrl.addOnSuccessListener {
                         val downloadUrl = it.toString() // Download linkini string olarak al
 
                         // Kullanıcı giriş yapmışsa bilgilerini al
@@ -81,7 +82,7 @@ class UploadActivity : AppCompatActivity() {
                             postMap.put("downloadUrl", downloadUrl)                 // Resim linki
                             postMap.put(
                                 "userEmail",
-                                auth.currentUser!!.email!!
+                                auth.currentUser!!.email.toString()
                             )                                                  // Kullanıcının maili
                             postMap.put(
                                 "comment",
@@ -90,7 +91,7 @@ class UploadActivity : AppCompatActivity() {
                             postMap.put("date", Timestamp.now())                   // Gönderi tarihi
 
                             // Firestore'a gönderiyi ekle
-                            firestore.collection("Post").add(postMap)
+                            firestore.collection("Posts").add(postMap)
                                 .addOnSuccessListener {
                                     finish() // Başarılıysa aktiviteyi kapat
                                 }

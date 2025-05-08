@@ -70,7 +70,7 @@ class FeedActivity : AppCompatActivity() {
         postArrayList=ArrayList<Post>()
         getData()
 
-        binding.recyclerView.layoutManager=LinearLayoutManager(this)
+        binding.recyclerView.layoutManager=LinearLayoutManager(this@FeedActivity)
         feedAdapter=FeedRecyclerAdapter(postArrayList)
         binding.recyclerView.adapter=feedAdapter
 
@@ -88,11 +88,11 @@ class FeedActivity : AppCompatActivity() {
                             val documents = value.documents
                             for (document in documents) {
                                 val comment = document.get("comment") as String
-                                val userEmail = document.get("userEmail") as String
+                                val useremail = document.get("userEmail") as String
                                 val downloadUrl=document.get("downloadUrl") as String
 
-                                val posts=Post(userEmail,comment,downloadUrl)
-                                postArrayList.add(posts)
+                                val post=Post(useremail,comment,downloadUrl)
+                                postArrayList.add(post)
                             }
 
                             feedAdapter.notifyDataSetChanged()
