@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -21,14 +22,26 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.kotlininstagram.databinding.ActivityUploadBinding
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.storage
+import java.util.UUID
 
 class UploadActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityUploadBinding
     private lateinit var activityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var permissionLauncher: ActivityResultLauncher<String>
-    var selectedBitmap: Bitmap? = null //selectedPicture
-    private lateinit var database: SQLiteDatabase
+    var selectedBitmap: Bitmap? = null
+    var selectedPicture: Uri? = null
+
+    private lateinit var auth: FirebaseAuth
+    private lateinit var firestore: FirebaseFirestore
+    private lateinit var storage: FirebaseStorage
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,13 +50,37 @@ class UploadActivity : AppCompatActivity() {
         binding = ActivityUploadBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        //database=this.openOrCreateDatabase("Images", MODE_PRIVATE,null)
         registerLauncher()
+
+        auth = Firebase.auth
+        firestore = Firebase.firestore
+        storage = Firebase.storage
+
 
     }
 
 
     fun upload(view: View) {
+
+        val uuid=UUID.randomUUID()
+        val imageName="$uuid.jpg"
+
+        //Reference ile storage eriştik
+        val reference = storage.reference
+        val imageReference =
+            reference.child("images").child(imageName)  //images klasörü aç içerisine image.jpg resmini koy
+
+        if (selectedPicture != null) {
+            imageReference.putFile(selectedPicture!!)
+                .addOnSuccessListener {
+                    //download url yi al -> firestore a kaydet
+
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this@UploadActivity,it.localizedMessage,Toast.LENGTH_LONG).show()
+                }
+        }
+
 
     }
 
@@ -127,30 +164,29 @@ class UploadActivity : AppCompatActivity() {
                 if (result.resultCode == RESULT_OK) {
                     val intentFromResult = result.data
                     if (intentFromResult != null) {
-                        val imageData = intentFromResult.data
-                        if (imageData != null) {
-                            try {
-                                if (Build.VERSION.SDK_INT >= 28) {
-                                    val source = ImageDecoder.createSource(
-                                        this@UploadActivity.contentResolver,
-                                        imageData
-                                    )
-                                    selectedBitmap = ImageDecoder.decodeBitmap(source)
-                                    binding.imageView3.setImageBitmap(selectedBitmap)
-                                } else {
-                                    selectedBitmap = MediaStore.Images.Media.getBitmap(
-                                        contentResolver,
-                                        imageData
-                                    )
-                                    binding.imageView3.setImageBitmap(selectedBitmap)
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+                        selectedPicture = intentFromResult.data
+                        try {
+                            if (Build.VERSION.SDK_INT >= 28) {
+                                val source = ImageDecoder.createSource(
+                                    this@UploadActivity.contentResolver,
+                                    selectedPicture!!
+                                )
+                                selectedBitmap = ImageDecoder.decodeBitmap(source)
+                                binding.imageView3.setImageBitmap(selectedBitmap)
+                            } else {
+                                selectedBitmap = MediaStore.Images.Media.getBitmap(
+                                    this@UploadActivity.contentResolver,
+                                    selectedPicture
+                                )
+                                binding.imageView3.setImageBitmap(selectedBitmap)
                             }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
                     }
                 }
             }
+
         permissionLauncher =
             registerForActivityResult(ActivityResultContracts.RequestPermission()) { result ->
                 if (result) {
