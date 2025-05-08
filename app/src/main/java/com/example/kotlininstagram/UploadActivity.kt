@@ -51,194 +51,190 @@ class UploadActivity : AppCompatActivity() {
         binding = ActivityUploadBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        registerLauncher()
+        registerLauncher() // İzin ve galeri işlemleri için launcher'ları kaydettim
 
+        // Firebase servislerine erişim sağladım
         auth = Firebase.auth
         firestore = Firebase.firestore
         storage = Firebase.storage
-
-
     }
 
-
+    // Fotoğrafı yükleme işlemi
     fun upload(view: View) {
+        val uuid = UUID.randomUUID() // Her fotoğraf için benzersiz bir ID oluşturdum
+        val imageName = "$uuid.jpg" // ID ile bir resim ismi belirledim
 
-        val uuid = UUID.randomUUID()
-        val imageName = "$uuid.jpg"
-
-        //Reference ile storage eriştik
+        // Storage referansına erişiyorum
         val reference = storage.reference
         val imageReference =
-            reference.child("images")
-                .child(imageName)  //images klasörü aç içerisine image.jpg resmini koy
+            reference.child("images").child(imageName) // "images" klasörünün içine ekleyeceğim
 
+        // Eğer kullanıcı bir resim seçmişse devam et
         if (selectedPicture != null) {
-            imageReference.putFile(selectedPicture!!)
+            imageReference.putFile(selectedPicture!!) // Seçilen resmi storage'a yüklüyorum
                 .addOnSuccessListener {
-                    //download url yi al -> firestore a kaydet
+                    // Resim başarıyla yüklendiyse, download linkini al
                     val uploadPictureReferences = storage.reference.child("images").child(imageName)
                     uploadPictureReferences.downloadUrl.addOnSuccessListener {
-                        val downloadUrl = it.toString()
+                        val downloadUrl = it.toString() // Download linkini string olarak al
 
+                        // Kullanıcı giriş yapmışsa bilgilerini al
                         if (auth.currentUser != null) {
+                            val postMap = hashMapOf<String, Any>()  // Firestore için map oluşturdum
+                            postMap.put("downloadUrl", downloadUrl)                 // Resim linki
+                            postMap.put(
+                                "useremail",
+                                auth.currentUser!!.email!!
+                            )                                                  // Kullanıcının maili
+                            postMap.put(
+                                "comment",
+                                binding.commentText.text.toString()
+                            )                                           // Kullanıcının yazdığı yorum
+                            postMap.put("date", Timestamp.now())                   // Gönderi tarihi
 
-                        }
-                            val postMap = hashMapOf<String, Any>()
-                            postMap.put("downloadUrl", downloadUrl)
-                            postMap.put("useremail", auth.currentUser!!.email!!)
-                            postMap.put("comment", binding.commentText.text.toString())
-                            postMap.put("date",Timestamp.now())
-
+                            // Firestore'a gönderiyi ekle
                             firestore.collection("Post").add(postMap)
                                 .addOnSuccessListener {
-                                    finish()
+                                    finish() // Başarılıysa aktiviteyi kapat
                                 }
-                                .addOnFailureListener{
-                                    Toast.makeText(this@UploadActivity,it.localizedMessage,Toast.LENGTH_SHORT).show()
+                                .addOnFailureListener {
+                                    // Hata olursa kullanıcıya göster
+                                    Toast.makeText(
+                                        this@UploadActivity,
+                                        it.localizedMessage,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                         }
-
                     }
-                        .addOnFailureListener {
-                            Toast.makeText(
-                                this@UploadActivity,
-                                it.localizedMessage,
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
                 }
-
-
+                .addOnFailureListener {
+                    // Resim yükleme başarısız olursa hata mesajı göster
+                    Toast.makeText(
+                        this@UploadActivity,
+                        it.localizedMessage,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
         }
+    }
 
-
-        //Resim seçme ve kamera izni
-        fun selectImage(view: View) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                //Android 33+ -> READ MEDIA IMAGES
-                if (ContextCompat.checkSelfPermission(
+    // Galeriden resim seçme ve izin kontrolü
+    fun selectImage(view: View) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 33 ve üstü için READ_MEDIA_IMAGES izni kontrolü
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.READ_MEDIA_IMAGES
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // Kullanıcıya neden izin istediğimizi açıkla
+                if (ActivityCompat.shouldShowRequestPermissionRationale(
                         this,
                         Manifest.permission.READ_MEDIA_IMAGES
-                    ) != PackageManager.PERMISSION_GRANTED
+                    )
                 ) {
-                    //İzin isteme mantığını kullanıcıya açıkla
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(
-                            this,
-                            Manifest.permission.READ_MEDIA_IMAGES
-                        )
-                    ) {
-                        Snackbar.make(
-                            view,
-                            "Permission Needed For Gallery",
-                            Snackbar.LENGTH_INDEFINITE
-                        )
-                            .setAction("Give Permission", View.OnClickListener {
-                                //İzin iste
-                                permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
-                            }).show()
-                    } else {
-                        //İzin iste
-                        permissionLauncher.launch((Manifest.permission.READ_MEDIA_IMAGES))
-                    }
-                }
-                //İzin verildi
-                else {
-                    //Galeriye git
-                    val intentToGallery =
-                        Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-                    activityResultLauncher.launch(intentToGallery)
-
+                    Snackbar.make(
+                        view,
+                        "Permission Needed For Gallery", // Açıklama mesajı
+                        Snackbar.LENGTH_INDEFINITE
+                    )
+                        .setAction("Give Permission", View.OnClickListener {
+                            // İzin iste
+                            permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+                        }).show()
+                } else {
+                    // Direkt izin iste
+                    permissionLauncher.launch((Manifest.permission.READ_MEDIA_IMAGES))
                 }
             } else {
-                //Android 32 - -> READ_EXTERNAL_STORAGE
-                //Daha önceden izin verilmiş mi kontrol et
-
-                if (ContextCompat.checkSelfPermission(
+                // Zaten izin verilmişse galeriyi aç
+                val intentToGallery =
+                    Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                activityResultLauncher.launch(intentToGallery)
+            }
+        } else {
+            // Android 12 ve altı için izin kontrolü (READ_EXTERNAL_STORAGE)
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(
                         this,
                         Manifest.permission.READ_EXTERNAL_STORAGE
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {//İzin verilmedi
-                    //İzin isteme mantığını kullanıcıya açıkla
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(
-                            this,
-                            Manifest.permission.READ_EXTERNAL_STORAGE
-                        )
-                    ) {
-                        Snackbar.make(
-                            view,
-                            "Permission Needed For Gallery",
-                            Snackbar.LENGTH_INDEFINITE
-                        )
-                            .setAction("Give Permission", View.OnClickListener {
-                                //İzin iste
-                                permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-                            }).show()
-                    } else {
-                        //İzin iste
-                        permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-                    }
+                    )
+                ) {
+                    Snackbar.make(
+                        view,
+                        "Permission Needed For Gallery",
+                        Snackbar.LENGTH_INDEFINITE
+                    )
+                        .setAction("Give Permission", View.OnClickListener {
+                            permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                        }).show()
+                } else {
+                    permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
                 }
-                //İzin verildi
-                else {
-                    //Galeriye git
-                    val intentToGallery =
-                        Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-                    activityResultLauncher.launch(intentToGallery)
-
-
-                }
+            } else {
+                val intentToGallery =
+                    Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                activityResultLauncher.launch(intentToGallery)
             }
         }
+    }
 
-
-        //RegisterLauncher:Intent sonucu almak
-        //PermissionLauncher:İzin istemek
-        private fun registerLauncher() {
-            activityResultLauncher =
-                registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                    if (result.resultCode == RESULT_OK) {
-                        val intentFromResult = result.data
-                        if (intentFromResult != null) {
-                            selectedPicture = intentFromResult.data
-                            try {
-                                if (Build.VERSION.SDK_INT >= 28) {
-                                    val source = ImageDecoder.createSource(
-                                        this@UploadActivity.contentResolver,
-                                        selectedPicture!!
-                                    )
-                                    selectedBitmap = ImageDecoder.decodeBitmap(source)
-                                    binding.imageView3.setImageBitmap(selectedBitmap)
-                                } else {
-                                    selectedBitmap = MediaStore.Images.Media.getBitmap(
-                                        this@UploadActivity.contentResolver,
-                                        selectedPicture
-                                    )
-                                    binding.imageView3.setImageBitmap(selectedBitmap)
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+    // Galeriye gitmek ve izin almak için launcher'ları kaydediyorum
+    private fun registerLauncher() {
+        // Galeriden resim seçtikten sonra ne yapacağımı burada belirtiyorum
+        activityResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    val intentFromResult = result.data
+                    if (intentFromResult != null) {
+                        selectedPicture = intentFromResult.data
+                        try {
+                            // Android 9 ve üstü için ImageDecoder
+                            if (Build.VERSION.SDK_INT >= 28) {
+                                val source = ImageDecoder.createSource(
+                                    this@UploadActivity.contentResolver,
+                                    selectedPicture!!
+                                )
+                                selectedBitmap = ImageDecoder.decodeBitmap(source)
+                                binding.imageView3.setImageBitmap(selectedBitmap)
+                            } else {
+                                // Android 8 ve altı için MediaStore kullanıyorum
+                                selectedBitmap = MediaStore.Images.Media.getBitmap(
+                                    this@UploadActivity.contentResolver,
+                                    selectedPicture
+                                )
+                                binding.imageView3.setImageBitmap(selectedBitmap)
                             }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
                     }
                 }
+            }
 
-            permissionLauncher =
-                registerForActivityResult(ActivityResultContracts.RequestPermission()) { result ->
-                    if (result) {
-                        val intentToGallery =
-                            Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-                        activityResultLauncher.launch(intentToGallery)
-                    } else {
-                        Toast.makeText(
-                            this@UploadActivity,
-                            "Permission needed!",
-                            Toast.LENGTH_SHORT
-                        )
-                            .show()
-
-                    }
+        // İzin alma işlemini burada kontrol ediyorum
+        permissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { result ->
+                if (result) {
+                    // İzin verildiyse galeriyi aç
+                    val intentToGallery =
+                        Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                    activityResultLauncher.launch(intentToGallery)
+                } else {
+                    // İzin verilmediyse uyarı göster
+                    Toast.makeText(
+                        this@UploadActivity,
+                        "Permission needed!",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-        }
-
-
+            }
     }
+
+
+}
