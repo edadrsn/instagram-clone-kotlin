@@ -8,7 +8,9 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.kotlininstagram.R
+import com.example.kotlininstagram.adapter.FeedRecyclerAdapter
 import com.example.kotlininstagram.databinding.ActivityFeedBinding
 import com.example.kotlininstagram.model.Post
 import com.google.firebase.Firebase
@@ -23,6 +25,7 @@ class FeedActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
     private lateinit var postArrayList:ArrayList<Post>
+    private lateinit var feedAdapter:FeedRecyclerAdapter
 
 
     // MENÜYÜ MAİN'E BAĞLADIK
@@ -67,6 +70,10 @@ class FeedActivity : AppCompatActivity() {
         postArrayList=ArrayList<Post>()
         getData()
 
+        binding.recyclerView.layoutManager=LinearLayoutManager(this)
+        feedAdapter=FeedRecyclerAdapter(postArrayList)
+        binding.recyclerView.adapter=feedAdapter
+
     }
 
     //Verileri almak için getData fonksiyonu oluşturdum
@@ -87,6 +94,8 @@ class FeedActivity : AppCompatActivity() {
                                 val posts=Post(userEmail,comment,downloadUrl)
                                 postArrayList.add(posts)
                             }
+
+                            feedAdapter.notifyDataSetChanged()
                         }
                     }
                 }
